@@ -2,8 +2,14 @@ const { Client } = require('pg');
 const fs = require('fs');
 const path = require('path');
 
-// 数据库连接字符串
-const connectionString = 'postgresql://postgres.lrfonsjtrltglabckxrz:sb_admin_Nkv2DCmnj4aDDynDjO5_qw_lblTWSVZ@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres';
+// 数据库连接字符串 - 从环境变量读取
+const connectionString = process.env.DATABASE_URL;
+
+if (!connectionString) {
+  console.error('❌ 错误: 请设置 DATABASE_URL 环境变量');
+  console.error('示例: set DATABASE_URL=postgresql://user:password@host:port/database');
+  process.exit(1);
+}
 
 async function initDatabase() {
   const client = new Client({ connectionString });

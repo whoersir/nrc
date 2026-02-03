@@ -39,9 +39,15 @@ export async function POST(request: Request) {
         // 方法1：使用 pg 客户端直接执行
         const { Client } = await import('pg');
         const client = new Client({
-          connectionString: process.env.DATABASE_URL ||
-            'postgresql://postgres.lrfonsjtrltglabckxrz:sb_admin_Nkv2DCmnj4aDDynDjO5_qw_lblTWSVZ@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres'
+          connectionString: process.env.DATABASE_URL
         });
+
+        if (!process.env.DATABASE_URL) {
+          return NextResponse.json(
+            { error: 'DATABASE_URL 环境变量未设置' },
+            { status: 500 }
+          );
+        }
 
         await client.connect();
         const result = await client.query(statement);

@@ -2,8 +2,9 @@ import type { NextConfig } from 'next';
 import path from 'path';
 
 const nextConfig: NextConfig = {
-  // outputFileTracingRoot: path.resolve(__dirname, '../../'),
+  // outputFileTracingRoot: path.resolve(__dirname, '../..//'),
   /* config options here */
+  
   allowedDevOrigins: ['*.dev.coze.site', '10.75.31.37', '*'],
   
   // 支持 WebSocket 和 HMR

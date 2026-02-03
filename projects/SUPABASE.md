@@ -21,10 +21,12 @@
 
 ### 环境变量
 ```bash
-NEXT_PUBLIC_SUPABASE_URL=https://lrfonsjtrltglabckxrz.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_Nkv2DCmnj4aDDynDjO5_qw_lblTWSVZ
-NEXT_PUBLIC_APP_URL=http://10.75.31.37:5000
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+NEXT_PUBLIC_APP_URL=your_app_url
 ```
+
+> ⚠️ **安全提醒**: 请将实际的环境变量值保存在 `.env.local` 文件中，不要提交到版本控制或文档中。
 
 ### 数据库表
 - **表名**: `users`

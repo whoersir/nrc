@@ -150,11 +150,12 @@ export default function ProfilePage() {
   const [layoutMode, setLayoutMode] = useState<LayoutMode>('classic');
   const [componentLayoutMode, setComponentLayoutMode] = useState<ComponentLayoutMode>('grid');
 
-  // 模拟游戏战绩和音乐记录
-  const [gameStats] = useState<GameStats[]>([
-    { gameName: '五子棋', wins: 12, totalGames: 15 },
-    { gameName: '井字棋', wins: 8, totalGames: 10 },
-  ]);
+  // 游戏战绩（从API获取）
+  const [gameStats, setGameStats] = useState<GameStats[]>([]);
+  const [loadingGameStats, setLoadingGameStats] = useState(true);
+
+  // 添加hydration检查状态
+  const [isClient, setIsClient] = useState(false);
 
   const [musicHistory] = useState<MusicHistory[]>([
     { songName: '晴天', artist: '周杰伦', playCount: 45 },
@@ -201,7 +202,40 @@ export default function ProfilePage() {
     if (savedComponentLayout) {
       setComponentLayoutMode(savedComponentLayout);
     }
+
+    // 加载游戏战绩
+    fetchGameStats();
+
+    // 标记客户端加载完成
+    setIsClient(true);
   }, []);
+
+  // 获取游戏战绩
+  const fetchGameStats = async () => {
+    try {
+      setLoadingGameStats(true);
+      const userData = localStorage.getItem('user_session');
+      if (!userData) return;
+
+      const parsedUser = JSON.parse(userData);
+      const response = await fetch(`/api/games/leaderboard/user?user_id=${parsedUser.id}`);
+      const data = await response.json();
+
+      if (data.success && data.data.stats) {
+        // 转换API数据为组件需要的格式
+        const stats: GameStats[] = data.data.stats.map((stat: any) => ({
+          gameName: stat.game_name,
+          wins: stat.wins,
+          totalGames: stat.total_games,
+        }));
+        setGameStats(stats);
+      }
+    } catch (error) {
+      console.error('获取游戏战绩失败:', error);
+    } finally {
+      setLoadingGameStats(false);
+    }
+  };
 
   // 主题切换
   const toggleTheme = () => {
@@ -365,6 +399,23 @@ export default function ProfilePage() {
     return `col-span-${width} row-span-${height}`;
   };
 
+  // 等待客户端hydration完成
+  if (!isClient) {
+    return (
+      <div className="flex min-h-[400px] items-center justify-center">
+        <Card className="glass-card">
+          <CardContent className="p-8 text-center">
+            <div className="flex items-center justify-center gap-2">
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+              <span className="text-muted-foreground">加载中...</span>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // 客户端加载完成后，如果没有用户数据，显示登录提示
   if (!user) {
     return (
       <div className="flex min-h-[400px] items-center justify-center">
@@ -564,12 +615,14 @@ export default function ProfilePage() {
               </div>
 
               {/* 游戏战绩 */}
-              {gameStats.length > 0 && (
-                <div className="space-y-3 pt-4 border-t border-border/40">
-                  <div className="flex items-center space-x-2 text-sm font-semibold">
-                    <Gamepad2 className="h-4 w-4 text-primary" />
-                    <span>游戏战绩</span>
-                  </div>
+              <div className="space-y-3 pt-4 border-t border-border/40">
+                <div className="flex items-center space-x-2 text-sm font-semibold">
+                  <Gamepad2 className="h-4 w-4 text-primary" />
+                  <span>游戏战绩</span>
+                </div>
+                {loadingGameStats ? (
+                  <div className="text-sm text-muted-foreground">加载中...</div>
+                ) : gameStats.length > 0 ? (
                   <div className="space-y-2">
                     {gameStats.map((stat, index) => (
                       <div key={index} className="flex items-center justify-between text-sm">
@@ -580,8 +633,10 @@ export default function ProfilePage() {
                       </div>
                     ))}
                   </div>
-                </div>
-              )}
+                ) : (
+                  <div className="text-sm text-muted-foreground">暂无游戏记录</div>
+                )}
+              </div>
 
               {/* 音乐记录 */}
               {musicHistory.length > 0 && (
