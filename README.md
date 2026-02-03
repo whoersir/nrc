@@ -198,8 +198,8 @@ projects/
 
 | 变量名 | 说明 | 示例 |
 |---------|------|------|
-| `NEXT_PUBLIC_WEATHER_APP_KEY` | 天气 API 密钥 | `s8AjYajnX1KxIT176976372624517yjhqObcG` |
-| `NEXT_PUBLIC_WEATHER_UID` | 天气 API 用户 ID | `bUIQTZ1769763726245cGmN7SctIE` |
+| `NEXT_PUBLIC_WEATHER_APP_KEY` | 天气 API 密钥 | `your-weather-api-key` |
+| `NEXT_PUBLIC_WEATHER_UID` | 天气 API 用户 ID | `your-weather-uid` |
 
 ## API 端点
 
