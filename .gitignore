@@ -104,5 +104,4 @@ src/
 # Ignore everything except projects directory
 $null
 package-lock.json
-package.json
 pnpm-lock.yaml

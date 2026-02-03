@@ -123,7 +123,7 @@ NEXT_PUBLIC_WEATHER_UID=your-uid
 ### 启动开发服务器
 
 ```bash
-# 启动开发服务器（端口 5000，主机 10.75.31.37）
+# 启动开发服务器（默认端口 5000）
 pnpm dev
 
 # 启动开发服务器（legacy 模式）
