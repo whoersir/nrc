@@ -1,16 +1,40 @@
 import type { NextConfig } from 'next';
 import path from 'path';
 
+// 获取允许的 CORS 来源列表
+const getAllowedOrigins = (): string[] => {
+  const envOrigins = process.env.CORS_ALLOWED_ORIGINS?.split(',') || [];
+  const prodOrigins = [
+    'https://nrc-web-223371-6-1392812070.sh.run.tcloudbase.com',
+  ];
+
+  // 生产环境只使用配置的域名
+  if (process.env.NODE_ENV === 'production') {
+    return prodOrigins.length > 0 ? prodOrigins : envOrigins;
+  }
+
+  // 开发环境允许本地和配置的内网地址
+  return [
+    'http://localhost:5000',
+    'http://127.0.0.1:5000',
+    ...envOrigins,
+  ];
+};
+
+const allowedOrigins = getAllowedOrigins();
+
 const nextConfig: NextConfig = {
   // outputFileTracingRoot: path.resolve(__dirname, '../..//'),
   /* config options here */
-  
-  allowedDevOrigins: ['*.dev.coze.site', '10.75.31.37', '*'],
-  
+
+  // 限制 CORS 来源（生产环境）
+  allowedDevOrigins: allowedOrigins,
+
   // 支持 WebSocket 和 HMR
   experimental: {
     serverActions: {
-      allowedOrigins: ['*'],
+      // 限制 Actions 的来源 Server
+      allowedOrigins: allowedOrigins.length > 0 ? allowedOrigins : ['localhost'],
     },
   },
   
@@ -73,9 +97,12 @@ const nextConfig: NextConfig = {
             key: 'Cache-Control',
             value: 'no-store, no-cache, must-revalidate',
           },
+          // API 路由严格限制 CORS，不允许跨域
           {
             key: 'Access-Control-Allow-Origin',
-            value: '*',
+            value: process.env.NODE_ENV === 'production'
+              ? allowedOrigins[0] || 'same-origin'
+              : 'http://localhost:5000',
           },
         ],
       },
@@ -86,10 +113,6 @@ const nextConfig: NextConfig = {
             key: 'Cache-Control',
             value: 'public, max-age=31536000, immutable',
           },
-          {
-            key: 'Access-Control-Allow-Origin',
-            value: '*',
-          },
         ],
       },
       {
@@ -99,10 +122,6 @@ const nextConfig: NextConfig = {
             key: 'Cache-Control',
             value: 'public, max-age=31536000, immutable',
           },
-          {
-            key: 'Access-Control-Allow-Origin',
-            value: '*',
-          },
         ],
       },
       {
@@ -111,10 +130,6 @@ const nextConfig: NextConfig = {
           {
             key: 'Cache-Control',
             value: 'public, max-age=31536000, immutable',
-          },
-          {
-            key: 'Access-Control-Allow-Origin',
-            value: '*',
           },
         ],
       },

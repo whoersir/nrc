@@ -3,23 +3,72 @@ import { NextRequest, NextResponse } from 'next/server';
 /**
  * Knot Chat API 代理
  * 使用 AG-UI 协议
+ *
+ * ⚠️ 安全改进：
+ * - API_BASE 和 TOKEN 必须从环境变量获取，不允许默认值
+ * - 添加 CSRF token 验证
  */
 
-const KNOT_API_BASE = process.env.NEXT_PUBLIC_KNOT_API_BASE || 'http://knot.woa.com/apigw/api/v1/agents/agui/cde9cb837e8e4391a829afe228029ec9';
-const KNOT_API_TOKEN = process.env.KNOT_API_TOKEN || '';
+// 从环境变量读取，缺失时抛出错误而不是使用默认值
+const KNOT_API_BASE = process.env.NEXT_PUBLIC_KNOT_API_BASE;
+const KNOT_API_TOKEN = process.env.KNOT_API_TOKEN;
+
+// 验证必需的环境变量
+if (!KNOT_API_BASE) {
+  throw new Error('❌ 缺少环境变量: NEXT_PUBLIC_KNOT_API_BASE');
+}
+if (!KNOT_API_TOKEN) {
+  throw new Error('❌ 缺少环境变量: KNOT_API_TOKEN');
+}
+
+// CSRF token 验证（从请求头获取）
+function validateCsrfToken(request: NextRequest): boolean {
+  const csrfToken = request.headers.get('x-csrf-token');
+  const cookieToken = request.cookies.get('csrf-token')?.value;
+
+  // 开发环境可以跳过验证
+  if (process.env.NODE_ENV === 'development') {
+    return true;
+  }
+
+  // 生产环境必须验证
+  if (!csrfToken || !cookieToken || csrfToken !== cookieToken) {
+    return false;
+  }
+  return true;
+}
 
 /**
  * POST 请求代理（用于聊天消息）
  */
 export async function POST(req: NextRequest) {
   try {
+    // CSRF 验证
+    if (!validateCsrfToken(req)) {
+      console.error('[Knot Proxy] CSRF 验证失败');
+      return NextResponse.json(
+        { error: 'CSRF validation failed' },
+        { status: 403 }
+      );
+    }
+
     const body = await req.json();
     const { message, sessionId } = body;
 
-    console.log(`[Knot Proxy] Chat request:`, { message, sessionId });
+    // 输入验证
+    if (!message || typeof message !== 'string') {
+      return NextResponse.json(
+        { error: 'Invalid message' },
+        { status: 400 }
+      );
+    }
+
+    // 生产环境减少日志输出
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`[Knot Proxy] Chat request: message length=${message.length}, sessionId=${sessionId || 'new'}`);
+    }
 
     // 构建符合 AG-UI 协议的请求体
-    // 首次对话时 conversation_id 为空字符串，后续对话使用 API 返回的 ID
     const requestBody = {
       input: {
         message,
@@ -30,35 +79,34 @@ export async function POST(req: NextRequest) {
       },
     };
 
-    console.log('[Knot Proxy] Request body:', JSON.stringify(requestBody, null, 2));
-
-    // 发送请求
-    const response = await fetch(KNOT_API_BASE, {
+    // 发送请求到 Knot API
+    const response = await fetch(KNOT_API_BASE!, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-knot-api-token': KNOT_API_TOKEN,
+        'x-knot-api-token': KNOT_API_TOKEN!,
       },
       body: JSON.stringify(requestBody),
     });
 
-    console.log('[Knot Proxy] Response status:', response.status);
-
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('[Knot Proxy] API Error:', response.status, errorText);
-      throw new Error(`Knot API error: ${response.status} - ${errorText}`);
+      console.error(`[Knot Proxy] API Error: ${response.status}`);
+      // 不向客户端暴露详细错误信息
+      return NextResponse.json(
+        { error: 'Failed to process chat request' },
+        { status: 500 }
+      );
     }
 
     const data = await response.json();
-    console.log('[Knot Proxy] API Response:', data);
 
     // 提取回复内容和 conversation_id
     let reply = '';
     let newConversationId = sessionId || '';
 
     if (data.type === 'TEXT_MESSAGE_CONTENT' && data.rawEvent) {
-      reply = data.rawEvent.content;
+      reply = data.rawEvent.content || '';
       if (data.rawEvent.conversation_id) {
         newConversationId = data.rawEvent.conversation_id;
       }
@@ -79,17 +127,10 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ reply, conversationId: newConversationId });
   } catch (error) {
-    console.error('[Knot Proxy] POST Error:', error);
+    console.error('[Knot Proxy] Error:', error);
     return NextResponse.json(
-      { error: 'Failed to process chat request', reply: '抱歉，服务暂时不可用，请稍后重试。' },
+      { error: 'Internal server error' },
       { status: 500 }
     );
   }
-}
-
-/**
- * GET 请求代理（可选，用于其他 API 调用）
- */
-export async function GET() {
-  return NextResponse.json({ message: 'Knot Chat API is ready. Use POST /api/knot/proxy to send messages.' });
 }
