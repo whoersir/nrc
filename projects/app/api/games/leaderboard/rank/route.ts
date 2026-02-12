@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
     // 验证参数
     if (!gameId || !userId) {
       return NextResponse.json(
-        { success: false, message: '缺少必填参数: game_id, user_id' },
+        { success: false, error: 'Missing parameters' },
         { status: 400 }
       );
     }
@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
     const validGames: GameId[] = ['snake', 'gomoku', 'fps', 'overcooked'];
     if (!validGames.includes(gameId)) {
       return NextResponse.json(
-        { success: false, message: '无效的游戏ID' },
+        { success: false, error: 'Invalid game_id' },
         { status: 400 }
       );
     }
@@ -36,21 +36,15 @@ export async function GET(request: NextRequest) {
       .eq('user_id', userId);
 
     if (userError) {
-      console.error('获取用户记录失败:', userError);
+      console.error('获取用户记录失败');
       return NextResponse.json(
-        { success: false, message: `获取用户记录失败: ${userError.message}` },
+        { success: false, error: 'Database error' },
         { status: 500 }
       );
     }
 
     // 用户没有玩过该游戏
     if (!userScores || userScores.length === 0) {
-      // 获取总玩家数
-      const { data: allUsers } = await supabase
-        .from('game_scores')
-        .select('user_id', { count: 'exact', head: true })
-        .eq('game_id', gameId);
-
       return NextResponse.json({
         success: true,
         data: {
@@ -72,16 +66,16 @@ export async function GET(request: NextRequest) {
       .eq('game_id', gameId);
 
     if (allError) {
-      console.error('获取排名失败:', allError);
+      console.error('获取排名失败');
       return NextResponse.json(
-        { success: false, message: `获取排名失败: ${allError.message}` },
+        { success: false, error: 'Database error' },
         { status: 500 }
       );
     }
 
     // 计算每个用户的最高分
     const userBestScores = new Map<string, number>();
-    allScores?.forEach((score: any) => {
+    allScores?.forEach((score) => {
       const existing = userBestScores.get(score.user_id) || 0;
       if (score.score > existing) {
         userBestScores.set(score.user_id, score.score);
@@ -101,10 +95,10 @@ export async function GET(request: NextRequest) {
         total_games: totalGames,
       },
     });
-  } catch (error: any) {
-    console.error('获取用户排名API错误:', error);
+  } catch (error) {
+    console.error('获取用户排名API错误');
     return NextResponse.json(
-      { success: false, message: error.message || '服务器内部错误' },
+      { success: false, error: 'Internal server error' },
       { status: 500 }
     );
   }

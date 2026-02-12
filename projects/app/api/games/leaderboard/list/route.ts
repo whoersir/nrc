@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
     // 验证游戏ID
     if (!gameId) {
       return NextResponse.json(
-        { success: false, message: '缺少必填参数: game_id' },
+        { success: false, error: 'Missing game_id' },
         { status: 400 }
       );
     }
@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
     const validGames: GameId[] = ['snake', 'gomoku', 'fps', 'overcooked'];
     if (!validGames.includes(gameId)) {
       return NextResponse.json(
-        { success: false, message: '无效的游戏ID' },
+        { success: false, error: 'Invalid game_id' },
         { status: 400 }
       );
     }
@@ -45,16 +45,16 @@ export async function GET(request: NextRequest) {
       .order('score', { ascending: false });
 
     if (error) {
-      console.error('获取排行榜失败:', error);
+      console.error('获取排行榜失败');
       return NextResponse.json(
-        { success: false, message: `获取排行榜失败: ${error.message}` },
+        { success: false, error: 'Database error' },
         { status: 500 }
       );
     }
 
     // 去重：每个用户只保留最高分
-    const userBestScores = new Map<string, any>();
-    scores?.forEach((score: any) => {
+    const userBestScores = new Map<string, typeof scores[0]>();
+    scores?.forEach((score) => {
       const existing = userBestScores.get(score.user_id);
       if (!existing || score.score > existing.score) {
         userBestScores.set(score.user_id, score);
@@ -82,10 +82,10 @@ export async function GET(request: NextRequest) {
       success: true,
       data: leaderboard,
     });
-  } catch (error: any) {
-    console.error('获取排行榜API错误:', error);
+  } catch (error) {
+    console.error('获取排行榜API错误');
     return NextResponse.json(
-      { success: false, message: error.message || '服务器内部错误' },
+      { success: false, error: 'Internal server error' },
       { status: 500 }
     );
   }

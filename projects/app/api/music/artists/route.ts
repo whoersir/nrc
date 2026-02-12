@@ -13,8 +13,6 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const letter = searchParams.get('letter');
 
-    console.log('🎵 获取歌手列表:', { letter });
-
     const result = await MusicService.getAllArtists({
       letter: letter || undefined,
     });
@@ -24,12 +22,12 @@ export async function GET(request: Request) {
       data: result.artists,
       total: result.total,
     });
-  } catch (error: any) {
-    console.error('❌ 获取歌手列表失败:', error);
+  } catch (error) {
+    console.error('❌ 获取歌手列表失败');
     return NextResponse.json(
       {
         success: false,
-        error: error.message || '获取歌手列表失败',
+        error: 'Internal server error',
       },
       { status: 500 }
     );

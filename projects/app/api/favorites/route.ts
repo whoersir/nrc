@@ -11,12 +11,10 @@ export async function GET(request: Request) {
     const user = await ServerAuth.getCurrentUser(request);
     if (!user || !user.id) {
       return NextResponse.json(
-        { error: '获取用户信息失败' },
+        { error: 'Unauthorized' },
         { status: 401 }
       );
     }
-
-    console.log(`💖 获取用户收藏: ${user.username}`);
 
     const result = await MusicService.getUserFavorites(user.id);
 
@@ -25,10 +23,10 @@ export async function GET(request: Request) {
       data: result.tracks,
       total: result.total,
     });
-  } catch (error: any) {
-    console.error('❌ 获取收藏列表失败:', error);
+  } catch (error) {
+    console.error('❌ 获取收藏列表失败');
     return NextResponse.json(
-      { error: error.message || '获取收藏失败' },
+      { error: 'Internal server error' },
       { status: 500 }
     );
   }
@@ -48,7 +46,7 @@ export async function POST(request: Request) {
     const user = await ServerAuth.getCurrentUser(request);
     if (!user || !user.id) {
       return NextResponse.json(
-        { error: '获取用户信息失败' },
+        { error: 'Unauthorized' },
         { status: 401 }
       );
     }
@@ -57,20 +55,18 @@ export async function POST(request: Request) {
 
     if (!trackId) {
       return NextResponse.json(
-        { error: '缺少 trackId' },
+        { error: 'Missing trackId' },
         { status: 400 }
       );
     }
 
-    console.log(`💖 添加收藏: ${user.username} -> ${trackId}`);
-
     const result = await MusicService.addFavorite(user.id, trackId);
 
     return NextResponse.json(result);
-  } catch (error: any) {
-    console.error('❌ 添加收藏失败:', error);
+  } catch (error) {
+    console.error('❌ 添加收藏失败');
     return NextResponse.json(
-      { error: error.message || '添加收藏失败' },
+      { error: 'Internal server error' },
       { status: 500 }
     );
   }

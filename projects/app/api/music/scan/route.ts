@@ -16,8 +16,6 @@ export async function POST(request: Request) {
   try {
     const options = await request.json();
 
-    console.log('🎵 收到扫描请求:', options);
-
     const result = await MusicService.scanAndSync({
       forceRescan: options?.force ?? false,
       extractMetadata: options?.extractMetadata ?? false,
@@ -26,7 +24,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       success: result.success,
-      message: result.message,
+      message: 'Scan completed',
       data: {
         totalTracks: result.stats.totalTracks,
         totalArtists: result.stats.totalArtists,
@@ -36,12 +34,12 @@ export async function POST(request: Request) {
         errors: result.stats.errors,
       },
     });
-  } catch (error: any) {
-    console.error('❌ 扫描失败:', error);
+  } catch (error) {
+    console.error('❌ 扫描失败');
     return NextResponse.json(
       {
         success: false,
-        error: error.message || '扫描失败',
+        error: 'Internal server error',
       },
       { status: 500 }
     );

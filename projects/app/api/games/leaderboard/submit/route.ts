@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
     // 验证必填字段
     if (!user_id || !game_id || score === undefined) {
       return NextResponse.json(
-        { success: false, message: '缺少必填字段: user_id, game_id, score' },
+        { success: false, error: 'Missing required fields' },
         { status: 400 }
       );
     }
@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
     const validGames: GameId[] = ['snake', 'gomoku', 'fps', 'overcooked'];
     if (!validGames.includes(game_id)) {
       return NextResponse.json(
-        { success: false, message: '无效的游戏ID' },
+        { success: false, error: 'Invalid game_id' },
         { status: 400 }
       );
     }
@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
     // 验证分数
     if (typeof score !== 'number' || score < 0) {
       return NextResponse.json(
-        { success: false, message: '分数必须是非负数' },
+        { success: false, error: 'Invalid score' },
         { status: 400 }
       );
     }
@@ -56,22 +56,22 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (error) {
-      console.error('提交分数失败:', error);
+      console.error('提交分数失败');
       return NextResponse.json(
-        { success: false, message: `提交分数失败: ${error.message}` },
+        { success: false, error: 'Database error' },
         { status: 500 }
       );
     }
 
     return NextResponse.json({
       success: true,
-      message: '分数提交成功',
+      message: 'Score submitted',
       data: scoreRecord,
     });
-  } catch (error: any) {
-    console.error('提交分数API错误:', error);
+  } catch (error) {
+    console.error('提交分数API错误');
     return NextResponse.json(
-      { success: false, message: error.message || '服务器内部错误' },
+      { success: false, error: 'Internal server error' },
       { status: 500 }
     );
   }

@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
     // 验证参数
     if (!userId) {
       return NextResponse.json(
-        { success: false, message: '缺少必填参数: user_id' },
+        { success: false, error: 'Missing user_id' },
         { status: 400 }
       );
     }
@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
       const validGames: GameId[] = ['snake', 'gomoku', 'fps', 'overcooked'];
       if (!validGames.includes(gameId)) {
         return NextResponse.json(
-          { success: false, message: '无效的游戏ID' },
+          { success: false, error: 'Invalid game_id' },
           { status: 400 }
         );
       }
@@ -46,9 +46,9 @@ export async function GET(request: NextRequest) {
     const { data: scores, error } = await query;
 
     if (error) {
-      console.error('获取游戏历史失败:', error);
+      console.error('获取游戏历史失败');
       return NextResponse.json(
-        { success: false, message: `获取游戏历史失败: ${error.message}` },
+        { success: false, error: 'Database error' },
         { status: 500 }
       );
     }
@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
       wins: number;
     }>();
 
-    scores?.forEach((record: any) => {
+    scores?.forEach((record) => {
       const gid = record.game_id as GameId;
       const existing = statsMap.get(gid);
 
@@ -93,10 +93,10 @@ export async function GET(request: NextRequest) {
         stats: stats,
       },
     });
-  } catch (error: any) {
-    console.error('获取用户游戏历史API错误:', error);
+  } catch (error) {
+    console.error('获取用户游戏历史API错误');
     return NextResponse.json(
-      { success: false, message: error.message || '服务器内部错误' },
+      { success: false, error: 'Internal server error' },
       { status: 500 }
     );
   }

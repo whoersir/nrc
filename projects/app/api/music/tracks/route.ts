@@ -20,7 +20,10 @@ export async function GET(request: Request) {
     const letter = searchParams.get('letter');
     const artist = searchParams.get('artist');
 
-    console.log('🎵 获取歌曲列表:', { page, limit, letter, artist });
+    // 开发环境才输出日志
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('🎵 获取歌曲列表:', { page, limit, letter: letter ? letter[0] : undefined });
+    }
 
     const result = await MusicService.getAllTracks({
       page,
@@ -36,12 +39,12 @@ export async function GET(request: Request) {
       page,
       limit,
     });
-  } catch (error: any) {
-    console.error('❌ 获取歌曲列表失败:', error);
+  } catch (error) {
+    console.error('❌ 获取歌曲列表失败');
     return NextResponse.json(
       {
         success: false,
-        error: error.message || '获取歌曲列表失败',
+        error: '获取歌曲列表失败',
       },
       { status: 500 }
     );

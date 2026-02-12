@@ -14,22 +14,20 @@ export async function DELETE(
     const user = await ServerAuth.getCurrentUser(request);
     if (!user || !user.id) {
       return NextResponse.json(
-        { error: '获取用户信息失败' },
+        { error: 'Unauthorized' },
         { status: 401 }
       );
     }
 
     const { id: trackId } = await params;
 
-    console.log(`💖 取消收藏: ${user.username} -> ${trackId}`);
-
     const result = await MusicService.removeFavorite(user.id, trackId);
 
     return NextResponse.json(result);
-  } catch (error: any) {
-    console.error('❌ 取消收藏失败:', error);
+  } catch (error) {
+    console.error('❌ 取消收藏失败');
     return NextResponse.json(
-      { error: error.message || '取消收藏失败' },
+      { error: 'Internal server error' },
       { status: 500 }
     );
   }

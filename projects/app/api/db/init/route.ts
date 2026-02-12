@@ -12,7 +12,16 @@ export async function POST(request: Request) {
     const supabase = getSupabase();
     if (!supabase) {
       return NextResponse.json(
-        { error: 'Supabase 客户端未初始化' },
+        { error: 'Service unavailable' },
+        { status: 500 }
+      );
+    }
+
+    // 检查环境变量
+    const databaseUrl = process.env.DATABASE_URL;
+    if (!databaseUrl) {
+      return NextResponse.json(
+        { error: 'Configuration error' },
         { status: 500 }
       );
     }
@@ -33,42 +42,27 @@ export async function POST(request: Request) {
 
     for (const statement of statements) {
       try {
-        // 使用 supabase.rpc 执行 SQL（如果支持）或者使用 direct SQL
-        // 注意：Supabase JS SDK 不直接支持原始 SQL，这里使用 data API
-
-        // 方法1：使用 pg 客户端直接执行
         const { Client } = await import('pg');
-        const client = new Client({
-          connectionString: process.env.DATABASE_URL
-        });
-
-        if (!process.env.DATABASE_URL) {
-          return NextResponse.json(
-            { error: 'DATABASE_URL 环境变量未设置' },
-            { status: 500 }
-          );
-        }
+        const client = new Client({ connectionString: databaseUrl });
 
         await client.connect();
-        const result = await client.query(statement);
+        await client.query(statement);
         await client.end();
 
-        results.push({ statement: statement.substring(0, 50) + '...', success: true });
-      } catch (error: any) {
-        errors.push({ statement: statement.substring(0, 50) + '...', error: error.message });
+        results.push({ success: true });
+      } catch (error) {
+        errors.push({ error: 'Statement failed' });
       }
     }
 
     return NextResponse.json({
-      success: true,
-      message: `数据库初始化完成：成功 ${results.length} 条，失败 ${errors.length} 条`,
-      results,
-      errors,
+      success: errors.length === 0,
+      message: `Database init: ${results.length} success, ${errors.length} failed`,
     });
-  } catch (error: any) {
-    console.error('数据库初始化失败:', error);
+  } catch (error) {
+    console.error('数据库初始化失败');
     return NextResponse.json(
-      { error: error.message || '数据库初始化失败' },
+      { error: 'Internal server error' },
       { status: 500 }
     );
   }

@@ -14,15 +14,12 @@ export async function GET(
     // 解码歌手名（URL 编码的）
     const { artist: artistName } = await params;
 
-    console.log(`🖼️ 获取歌手封面: ${artistName}`);
-
-    // 封面路径：F:\Music\{歌手}\cover.jpg
-    const coverPath = path.join('F:\\Music', artistName, 'cover.jpg');
+    // 封面路径：从环境变量读取音乐目录
+    const musicDir = process.env.MUSIC_LIBRARY_PATH || 'F:\\Music';
+    const coverPath = path.join(musicDir, artistName, 'cover.jpg');
 
     // 检查文件是否存在
     if (!fs.existsSync(coverPath)) {
-      console.warn(`⚠️ 封面文件不存在: ${coverPath}`);
-
       // 返回 SVG 占位图
       const placeholderSvg = `
 <svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200">
@@ -49,13 +46,13 @@ export async function GET(
       headers: {
         'Content-Type': 'image/jpeg',
         'Content-Length': String(fileBuffer.length),
-        'Cache-Control': 'public, max-age=86400', // 缓存 1 天
+        'Cache-Control': 'public, max-age=86400',
       },
     });
-  } catch (error: any) {
-    console.error('❌ 获取封面失败:', error);
+  } catch (error) {
+    console.error('❌ 获取封面失败');
     return NextResponse.json(
-      { error: error.message || '获取封面失败' },
+      { error: 'Internal server error' },
       { status: 500 }
     );
   }

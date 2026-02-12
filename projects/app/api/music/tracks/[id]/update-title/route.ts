@@ -4,20 +4,6 @@ import { MusicService } from '@/lib/music/music-service';
 /**
  * 手动更新单首歌曲标题
  * PUT /api/music/tracks/[id]/update-title
- *
- * 路径参数:
- * - id: 歌曲ID
- *
- * 请求体:
- * {
- *   title: string,  // 新标题
- * }
- *
- * 响应:
- * {
- *   success: boolean,
- *   message: string,
- * }
  */
 export async function PUT(
   request: Request,
@@ -27,7 +13,9 @@ export async function PUT(
     const { id: trackId } = await params;
     const { title } = await request.json();
 
-    console.log(`🎵 收到更新标题请求: ${trackId} -> ${title}`);
+    if (!title) {
+      return NextResponse.json({ error: 'Missing title' }, { status: 400 });
+    }
 
     const result = await MusicService.updateTrackTitle(trackId, title);
 
@@ -35,13 +23,10 @@ export async function PUT(
       success: result.success,
       message: result.message,
     });
-  } catch (error: any) {
-    console.error('❌ 更新标题失败:', error);
+  } catch (error) {
+    console.error('❌ 更新标题失败');
     return NextResponse.json(
-      {
-        success: false,
-        error: error.message || '更新标题失败',
-      },
+      { error: 'Internal server error' },
       { status: 500 }
     );
   }
